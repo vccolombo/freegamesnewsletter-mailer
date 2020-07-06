@@ -15,8 +15,13 @@ class Mailer:
     SMTP_DOMAIN = "smtp.gmail.com"
     SMTP_PORT = 465
 
-    def __init__(self):
+    def send_email(self, email_message):
         self._create_smtp_connection()
+
+        message = self._get_MIME_message(email_message)
+        self._send_email(email_message.to, message)
+        
+        self._terminate_smtp_connection()
 
     def _create_smtp_connection(self):
         try:
@@ -30,9 +35,8 @@ class Mailer:
             time.sleep(10)
             self._create_smtp_connection()
     
-    def send_email(self, email_message):
-        message = self._get_MIME_message(email_message)
-        self._send_email(email_message.to, message)
+    def _terminate_smtp_connection(self):
+        self.smtp_client.quit()
 
     def _get_MIME_message(self, email_message):
         message = MIMEMultipart("alternative")
