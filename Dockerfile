@@ -1,17 +1,13 @@
-FROM python:3.8-alpine
+FROM python:3.8-slim-buster
 
-RUN python -m pip install --upgrade pip
+RUN python3 -m pip install --upgrade pip
 
 COPY requirements.txt /
-
-RUN apk add --no-cache --virtual .build-deps gcc libc-dev libxslt-dev && \
-    apk add --no-cache libxslt && \
-    python -m pip install -r /requirements.txt && \
-    apk del .build-deps
+RUN python3 -m pip install -r /requirements.txt
 
 COPY src/ /app
 WORKDIR /app
 
-ENTRYPOINT ["python"]
+ENTRYPOINT ["python3"]
 
 CMD ["main.py"]
