@@ -33,9 +33,22 @@ class EmailBroker:
             self._conn.close()
 
     def consume(self):
-        self._channel.basic_consume(
-            queue=self.QUEUE, on_message_callback=self._callback)
-        self._channel.start_consuming()
+        while True:
+            try:
+                self._channel.basic_consume(
+                    queue=self.QUEUE, on_message_callback=self._callback)
+                self._channel.start_consuming()
+            except pika.exceptions.ConnectionClosedByBroker:
+                self.logger.exception(f"Connection closed by RabbitMQ")
+                break
+            # Do not recover on channel errors
+            except pika.exceptions.AMQPChannelError as err:
+                self.logger.exception(f"Caught a channel error: {err}, stopping...")
+                break
+            # Recover on all other connection errors
+            except pika.exceptions.AMQPConnectionError:
+                self.logger.warn("Connection was closed, retrying...")
+                continue   
 
     def _callback(self, ch, method, properties, body):
         try:
