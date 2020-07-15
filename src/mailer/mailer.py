@@ -5,6 +5,12 @@ import smtplib, ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
+class MailerException(Exception):
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+
 class Mailer:
     logger = logging.getLogger(__name__)
 
@@ -21,15 +27,18 @@ class Mailer:
         self.smtp_client = None
 
     def send_email(self, email_message):
-        self._create_smtp_connection()
+        try:
+            self._create_smtp_connection()
 
-        message = self._get_MIME_message(email_message)
-        self._send_email(email_message.to, message)
-
-        self._terminate_smtp_connection()
+            message = self._get_MIME_message(email_message)
+            self._send_email(email_message.to, message)
+        except MailerException as e:
+            raise e
+        finally:
+            self._terminate_smtp_connection()
 
     def _create_smtp_connection(self):
-        for attempt in range(self.MAX_ATTEMPTS):
+        for _ in range(self.MAX_ATTEMPTS):
             try:
                 context = ssl.create_default_context()
                 self.smtp_client = smtplib.SMTP_SSL(
@@ -39,22 +48,16 @@ class Mailer:
                 self.logger.exception(e)
                 # try again after 10 seconds
                 time.sleep(10)
-            except Exception as e:
-                # Something bad happened. Just die and wait for a human to look at this
-                self.logger.exception(e)
-                break
             else:
                 break # Don't retry if successfull
         else:
-            self.logger.error("Failed to create SMTP connection")
+            raise MailerException("Failed to create SMTP connection")
     
     def _terminate_smtp_connection(self):
         try:
             self.smtp_client.quit()
         except smtplib.SMTPServerDisconnected:
             self.logger.info("SMTP already disconnected")
-        except Exception as e:
-            self.logger.exception(e)
 
     def _get_MIME_message(self, email_message):
         message = MIMEMultipart("alternative")
@@ -69,7 +72,7 @@ class Mailer:
         return message.as_string()
 
     def _send_email(self, to, message):
-        for attempt in range(self.MAX_ATTEMPTS):
+        for _ in range(self.MAX_ATTEMPTS):
             try:
                 self.smtp_client.sendmail(
                     self.SENDER_EMAIL, to, message)
@@ -82,13 +85,8 @@ class Mailer:
                 self.logger.exception(e)
                 # try again after 10 seconds
                 time.sleep(10)
-            except Exception as e:
-                # Something bad happened. Just die and wait for a human to look at this
-                self.logger.exception(e)
-                break
             else:
                 break # Don't retry if successfull
         else:
-            self.logger.error(
-                f"Email failed to be sent after {self.MAX_ATTEMPTS} attempts")
+            raise MailerException(f"Failed to send email: {to} {message}")
             
