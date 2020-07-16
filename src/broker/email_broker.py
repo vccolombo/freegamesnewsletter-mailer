@@ -61,8 +61,9 @@ class EmailBroker:
             ch.basic_ack(delivery_tag = method.delivery_tag)
         except MailerException as e:
             self.logger.exception(e)
-            ch.basic_nack(delivery_tag = method.delivery_tag)
+            ch.basic_nack(
+                delivery_tag=method.delivery_tag, requeue=True)
         except Exception as e:
             self.logger.exception(e)
-            ch.basic_reject(
+            ch.basic_nack(
                 delivery_tag=method.delivery_tag, requeue=False)
