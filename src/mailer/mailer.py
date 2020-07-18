@@ -16,12 +16,12 @@ class Mailer:
 
     MAX_ATTEMPTS = 3
 
-    SENDER_EMAIL = "freegamesnewsletter@gmail.com"
-    SENDER_PASSWORD = os.environ["EMAIL_PASS"]
+    SENDER_EMAIL = os.environ["EMAIL_ADDR"]
 
-    # smtp configs
-    SMTP_DOMAIN = "smtp.gmail.com"
-    SMTP_PORT = 465
+    SMTP_USER = os.environ["SMTP_USER"]
+    SMTP_PASS = os.environ["SMTP_PASS"]
+    SMTP_DOMAIN = os.environ["SMTP_ENDPOINT"]
+    SMTP_PORT = os.environ["SMTP_PORT"]
 
     def __init__(self):
         self.smtp_client = None
@@ -43,7 +43,7 @@ class Mailer:
                 context = ssl.create_default_context()
                 self.smtp_client = smtplib.SMTP_SSL(
                     self.SMTP_DOMAIN, self.SMTP_PORT, context=context)
-                self.smtp_client.login(self.SENDER_EMAIL, self.SENDER_PASSWORD)
+                self.smtp_client.login(self.SMTP_USER, self.SMTP_PASS)
             except smtplib.SMTPException as e:
                 self.logger.exception(e)
                 # try again after 10 seconds
