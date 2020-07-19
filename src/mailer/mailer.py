@@ -61,7 +61,7 @@ class Mailer:
 
     def _get_MIME_message(self, email_message):
         message = MIMEMultipart("alternative")
-        message["From"] = self.SENDER_EMAIL
+        message["From"] = f"Free Games Newsletter <{self.SENDER_EMAIL}>"
         message["To"] = email_message.to
         message["Subject"] = email_message.subject
         message["X-Priority"] = "3"
